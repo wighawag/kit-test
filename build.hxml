@@ -1,0 +1,20 @@
+# -main BoxTest
+# --macro include('box',true,['box.macro'])
+# -lib tink_macro
+# -cp src
+# -js bin/Main.js
+# -debug
+# -D source-map-content
+-main Test3D
+--macro include('box',true,['box.macro'])
+-lib tink_macro
+-lib loka:0.3.0
+-lib boot:0.3.0
+-lib glee:0.3.0
+-lib glmat:0.3.0
+-lib tri:0.3.0
+-cp src
+-js bin/Main.js
+-D dump=pretty
+# -debug
+# -D source-map-content
