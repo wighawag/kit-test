@@ -4,7 +4,7 @@ import boot.Assets;
 import glee.GPUBuffer;
 import glee.GPUTexture;
 import haxe.Timer;
-import jsloka.Window;
+import loka.Window;
 
 using glmat.Mat4;
 import glmat.Vec3;
@@ -16,7 +16,7 @@ import loka.gl.GL;
 
 import glee.GPU;
 import glee.GPUCubeTexture;
-import tri.SkyTriangleProgram;
+//import tri.SkyTriangleProgram;
 
 class Test3D{
 
@@ -25,7 +25,7 @@ class Test3D{
 	var loader : Loader;
 
 	var program : SkyBoxProgram;
-	var buffer  : GPUBuffer<SkyBoxProgram>;
+	var buffer  : GPUBuffer<{position:Vec3}>;
 
 	var _texture : GPUCubeTexture;
 	var mat : Mat4;
@@ -38,7 +38,7 @@ class Test3D{
 
 	var _obj_texture : GPUTexture;
 	var _obj_program : SimpleProgram;
-	var _obj_buffer : GPUBuffer<SimpleProgram>;
+	var _obj_buffer : GPUBuffer<{position:Vec3}>;
 	var _obj_mat : Mat4;
 	var _obj_proj : Mat4;
 	var _obj_view : Mat4;
@@ -59,14 +59,14 @@ class Test3D{
 		loader = new Loader();
 		gpu = new GPU(window.gl);
 		program = SkyBoxProgram.upload(gpu);		
-		buffer = new GPUBuffer<SkyBoxProgram>(gpu, GL.STATIC_DRAW); 
+		buffer = new GPUBuffer<{position:Vec3}>(gpu, GL.STATIC_DRAW); 
 		buffer.rewind();
 		var cube = new Cube(100,100,100);
 		cube.write(buffer);
 		buffer.upload();
 
 		_obj_program = SimpleProgram.upload(gpu);		
-		_obj_buffer = new GPUBuffer<SimpleProgram>(gpu, GL.DYNAMIC_DRAW); 
+		_obj_buffer = new GPUBuffer<{position:Vec3}>(gpu, GL.DYNAMIC_DRAW); 
 
 		_obj_proj = new Mat4();
 		_obj_view = new Mat4();
@@ -97,6 +97,7 @@ class Test3D{
 				assets.images.get("skybox/posy.jpg"),
 				assets.images.get("skybox/posz.jpg")
 					);
+				//TODO : remove js specific
 				js.Browser.window.requestAnimationFrame(render);
 
 			case Failure(e):
@@ -148,7 +149,9 @@ class Test3D{
 		_obj_program.set_V(_obj_view);
 		_obj_program.draw(_obj_buffer);
 
+		//TODO : remove js specific
 		js.Browser.window.requestAnimationFrame(render);
+		
 		return true;
 	}
 }
