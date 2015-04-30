@@ -1,19 +1,14 @@
 -main Test3D
 -cp src
 -lib kit
-#-cp C:\Development\haxe\kit\src
-#-lib tink_macro:0.5.0
-#-lib tink_core:1.0.0-rc.7
 -js bin/Main.js
-
-# -debug
-# -D source-map-content
+-debug
+-D source-map-content
 
 --next
 -main BoxTest
 -cp src
 -lib kit
-#-cp C:\Development\haxe\kit\src
-#-lib tink_macro:0.5.0
-#-lib tink_core:1.0.0-rc.7
 -js bin/Main.js
+-debug
+-D source-map-content
