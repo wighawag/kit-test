@@ -1,7 +1,7 @@
 -main Test3D
 -cp src
 -lib kit
--js bin/Main.js
+-js bin/test3d/Main.js
 -debug
 -D source-map-content
 
@@ -9,6 +9,14 @@
 -main BoxTest
 -cp src
 -lib kit
--js bin/Main.js
+-js bin/boxtest/Main.js
+-debug
+-D source-map-content
+
+--next
+-main KorriganTest
+-cp src
+-lib kit
+-js bin/korrigantest/Main.js
 -debug
 -D source-map-content
