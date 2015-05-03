@@ -94,10 +94,12 @@ class KorriganTest{
 
 		buffer.rewind();
 		context.save();
-		//context.rotateZ(Math.PI / 2);
+
 		//context.translate(width/2, height/2);
-		//context.rotateZ(Math.PI / 2);
-		spriteLibrary.draw(buffer,context,"SpaceShipEvilOne.blend", "idle",0, 0,0,0);
+		context.rotateZ(now);
+		//context.scale(0.5,0.5);
+
+		spriteLibrary.draw(buffer,context,"SpaceShipEvilOne.blend", "idle",0, width/3,height/2,0, 100, 100, true);
 		context.restore();
   		buffer.upload();
 
