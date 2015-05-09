@@ -6,7 +6,7 @@ import loka.asset.Image;
 import loka.asset.Loader;
 import glee.GPUBuffer;
 import haxe.Timer;
-import loka.Window;
+import loka.App;
 
 import korrigan.SimpleTexturedProgram;
 
@@ -20,7 +20,6 @@ class BoxTest{
 	var program : SimpleTexturedProgram;
 	var buffer  : GPUBuffer<SimpleTexturedProgram>;
 
-	var window : Window;
 	var gpu : GPU;
 	var loader : Loader;
 
@@ -31,13 +30,11 @@ class BoxTest{
 	}
 
 	public function new( ){
-		window = Window.createWindow(); //js specific
 		loader = new Loader();
-		gpu = new GPU(window.gl); //TODO call it GPUState ?
+		gpu = GPU.init(); 
 		program = SimpleTexturedProgram.upload(gpu);		
-		buffer = new GPUBuffer<SimpleTexturedProgram>(gpu, GL.DYNAMIC_DRAW); //gpu.createBuffer(TexturedQuadProgram);
+		buffer = new GPUBuffer<SimpleTexturedProgram>(gpu, GL.DYNAMIC_DRAW);
 
-		lastTime = Timer.stamp();
 		loader.loadImage("test.png",assetLoaded , errorLoading);
 	}
 
@@ -48,15 +45,10 @@ class BoxTest{
 	function assetLoaded(image : Image) : Void{
 		_texture = gpu.uploadTexture(image);
 
-		js.Browser.window.requestAnimationFrame(render);
+		gpu.setRenderFunction(render);
 	}
 
-	var lastTime : Float;
-	function render(t : Float) : Bool{
-		var now = Timer.stamp();
-		var delta = now - lastTime;
-		lastTime = now;
-
+	function render(now : Float) {
 		gpu.clearWith(0.5,0.5,0,1);
 
 		buffer.rewind();
@@ -95,9 +87,5 @@ class BoxTest{
 		program.set_view(view.translate(view,-0.5,0,0));
 		program.draw(buffer); //TODO should be able to specify the number of indices/vertices
 		//TODO? should be able to specify gpu state ?
-
-
-		js.Browser.window.requestAnimationFrame(render);
-		return true;
 	}
 }

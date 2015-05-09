@@ -5,8 +5,6 @@ import loka.asset.Loader;
 import boot.Assets;
 import glee.GPUBuffer;
 import glee.GPUTexture;
-import haxe.Timer;
-import loka.Window;
 
 using glmat.Mat4;
 import glmat.Vec2;
@@ -16,15 +14,19 @@ import korrigan.SpriteLibrary;
 import korrigan.NormalTexturedProgram;
 
 import loka.gl.GL;
+import loka.App;
 
 import glee.GPU;
 import glee.GPUTexture;
+import tri.ColorProgram;
 
 class KorriganTest{
 
-	var window : Window;
 	var gpu : GPU;
 	var loader : Loader;
+
+	var colorProgram : ColorProgram;
+	var colorBuffer  : GPUBuffer<ColorProgram>;
 
 	var program : NormalTexturedProgram;
 	var buffer  : GPUBuffer<NormalTexturedProgram>;
@@ -41,11 +43,14 @@ class KorriganTest{
 	}
 
 	public function new( ){
-		window = Window.createWindow();
 		loader = new Loader();
-		gpu = new GPU(window.gl);
+		gpu = GPU.init({viewportType : KeepRatioWithBorder(1920,880), viewportPosition: Center, maxHDPI:1});
 		program = NormalTexturedProgram.upload(gpu);		
-		buffer = new GPUBuffer<NormalTexturedProgram>(gpu, GL.STATIC_DRAW); 
+		buffer = new GPUBuffer<NormalTexturedProgram>(gpu, GL.DYNAMIC_DRAW); 
+
+		colorProgram = ColorProgram.upload(gpu);
+		colorBuffer = new GPUBuffer<ColorProgram>(gpu, GL.DYNAMIC_DRAW);
+
 		context = new TransformationContext();
 		mat = new Mat4();
 		
@@ -66,40 +71,60 @@ class KorriganTest{
 		        spriteLibrary.loadSprites(json,textureAtlas);  
 				_diffuse = gpu.uploadTexture(assets.images.get("colors.png"));
 		        _normal = gpu.uploadTexture(assets.images.get("normals.png"));
-				//TODO : remove js specific
-				js.Browser.window.requestAnimationFrame(render);
 
+		        gpu.setWindowResizeCallback(onWindowResized);
+		        onWindowResized(gpu.windowWidth, gpu.windowHeight);
+				gpu.setRenderFunction(render);
 			case Failure(e):
 				trace(e);
 		}
 		
 	}
 
-	var lastTime : Float;
-	function render(t : Float) : Bool{
-		window.resize();//todo on resize event
-		var width = Std.int(window.width);
-		var height = Std.int(window.height);
-		window.gl.viewport(0, 0, width , height);//window.gl.drawingBufferWidth, window.gl.drawingBufferHeight);
-
+	function onWindowResized(width : Float, height : Float){
 		mat.ortho(0, width, height,0,-1,1);
+	}
 
-		var now = Timer.stamp();
-		var delta = now - lastTime;
-		lastTime = now;
+	function render(now : Float) {
 
-		
-		gpu.clearWith(0.5,0.5,0,1);
 
+		var width = gpu.windowWidth;
+		var height = gpu.windowHeight;
+
+		gpu.clearWith(0,0,0,1);
+
+		var r = 0.5;
+		var g = 0;
+		var b = 0.5;
+		var a = 1;
+		colorBuffer.rewind();
+		colorBuffer.write_position(-1,-1,0);
+		colorBuffer.write_color(r,g,b,a);
+		colorBuffer.write_position(-1,1,0);
+		colorBuffer.write_color(r,g,b,a);
+		colorBuffer.write_position(1,1,0);
+		colorBuffer.write_color(r,g,b,a);
+
+		colorBuffer.write_position(1,1,0);
+		colorBuffer.write_color(r,g,b,a);
+		colorBuffer.write_position(1,-1,0);
+		colorBuffer.write_color(r,g,b,a);
+		colorBuffer.write_position(-1,-1,0);
+		colorBuffer.write_color(r,g,b,a);
+		colorProgram.draw(colorBuffer);
+
+		gpu.gl.enable(GL.BLEND);
+		gpu.gl.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
 
 		buffer.rewind();
 		context.save();
 
-		//context.translate(width/2, height/2);
-		context.rotateZ(now);
-		//context.scale(0.5,0.5);
+		var angle = now;
+		context.translate(width/2 + Math.cos(angle) * width/3, height/2  + Math.sin(angle) * height/3);
+		context.rotateZ(angle);
+		context.scale( Math.cos(angle), Math.sin(angle));
 
-		spriteLibrary.draw(buffer,context,"SpaceShipEvilOne.blend", "idle",0, width/3,height/2,0, 100, 100, true);
+		spriteLibrary.draw(buffer,context,"SpaceShipEvilOne.blend", "idle",0, 0,0,0, 100, 100, true);
 		context.restore();
   		buffer.upload();
 
@@ -113,11 +138,18 @@ class KorriganTest{
 		program.set_tex(_diffuse);
 		program.set_normal(_normal);
 		
-		program.draw(buffer);
 
-		//TODO : remove js specific
-		js.Browser.window.requestAnimationFrame(render);
+		//split screen test
+		//var numSplit : Int = 2;
+		////to keep same size:
+		////mat.ortho(0, width/numSplit, height,0,-1,1);
+		//for (i in 0...numSplit){
+		//	gpu.setViewPort((gpu.windowWidth/numSplit) * i,0,gpu.windowWidth/numSplit, gpu.windowHeight);
+		//	program.draw(buffer);	
+		//}
+
+		program.draw(buffer);	
 		
-		return true;
+		
 	}
 }

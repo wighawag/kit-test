@@ -4,7 +4,6 @@ import boot.Assets;
 import glee.GPUBuffer;
 import glee.GPUTexture;
 import haxe.Timer;
-import loka.Window;
 
 using glmat.Mat4;
 import glmat.Vec3;
@@ -13,6 +12,7 @@ import tri.SimpleProgram;
 import tri.SkyBoxProgram;
 
 import loka.gl.GL;
+import loka.App;
 
 import glee.GPU;
 import glee.GPUCubeTexture;
@@ -20,7 +20,6 @@ import glee.GPUCubeTexture;
 
 class Test3D{
 
-	var window : Window;
 	var gpu : GPU;
 	var loader : Loader;
 
@@ -55,9 +54,8 @@ class Test3D{
 	}
 
 	public function new( ){
-		window = Window.createWindow();
 		loader = new Loader();
-		gpu = new GPU(window.gl);
+		gpu = GPU.init();
 		program = SkyBoxProgram.upload(gpu);		
 		buffer = new GPUBuffer<{position:Vec3}>(gpu, GL.STATIC_DRAW); 
 		buffer.rewind();
@@ -77,7 +75,6 @@ class Test3D{
 		_obj_angle = 0;
 
 		_cube = new Cube(10,30,10);
-		lastTime = Timer.stamp();
 		Assets.load([],["skybox/negx.jpg","skybox/negy.jpg","skybox/negz.jpg","skybox/posx.jpg","skybox/posy.jpg","skybox/posz.jpg"]).handle(loadingAssets);
 	}
 
@@ -97,26 +94,14 @@ class Test3D{
 				assets.images.get("skybox/posy.jpg"),
 				assets.images.get("skybox/posz.jpg")
 					);
-				//TODO : remove js specific
-				js.Browser.window.requestAnimationFrame(render);
-
+				gpu.setRenderFunction(render);
 			case Failure(e):
 				trace(e);
 		}
 		
 	}
 
-	var lastTime : Float;
-	function render(t : Float) : Bool{
-		window.resize();//todo on resize event
-		var width = Std.int(window.width);
-		var height = Std.int(window.height);
-		window.gl.viewport(0, 0, width , height);//window.gl.drawingBufferWidth, window.gl.drawingBufferHeight);
-
-		var now = Timer.stamp();
-		var delta = now - lastTime;
-		lastTime = now;
-
+	function render(now : Float){
 		_obj_angle += 0.01;
 		if (_obj_angle > Math.PI * 2){
 			_obj_angle = 0;
@@ -125,7 +110,7 @@ class Test3D{
 		_obj_eye.x = ((30 - _obj_center.x) * Math.cos(_obj_angle)) + _obj_center.x;
 		_obj_eye.z = ((30 - _obj_center.z) * Math.sin(_obj_angle)) + _obj_center.z;
 
-		_obj_proj = _obj_proj.perspective(45,window.width/window.height,0.01,1000);
+		_obj_proj = _obj_proj.perspective(45,gpu.windowWidth/gpu.windowHeight,0.01,1000);
 		_obj_view = _obj_view.lookAt(_obj_eye,_obj_center,_obj_up);
 
 		gpu.clearWith(0.5,0.5,0,1);
@@ -148,10 +133,5 @@ class Test3D{
 		_obj_program.set_P(_obj_proj);
 		_obj_program.set_V(_obj_view);
 		_obj_program.draw(_obj_buffer);
-
-		//TODO : remove js specific
-		js.Browser.window.requestAnimationFrame(render);
-		
-		return true;
 	}
 }
