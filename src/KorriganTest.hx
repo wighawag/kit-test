@@ -22,6 +22,8 @@ import tri.ColorProgram;
 
 class KorriganTest{
 
+	var logicalWidth = 600;
+	var logicalHeight = 400;
 	var gpu : GPU;
 	var loader : Loader;
 
@@ -44,7 +46,7 @@ class KorriganTest{
 
 	public function new( ){
 		loader = new Loader();
-		gpu = GPU.init({viewportType : KeepRatioWithBorder(1920,880), viewportPosition: Center, maxHDPI:1});
+		gpu = GPU.init({viewportType : FillUpToRatios(1/4,4), viewportPosition: Center, maxHDPI:1});
 		program = NormalTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<NormalTexturedProgram>(gpu, GL.DYNAMIC_DRAW); 
 
@@ -72,8 +74,10 @@ class KorriganTest{
 				_diffuse = gpu.uploadTexture(assets.images.get("colors.png"));
 		        _normal = gpu.uploadTexture(assets.images.get("normals.png"));
 
-		        gpu.setWindowResizeCallback(onWindowResized);
-		        onWindowResized(gpu.windowWidth, gpu.windowHeight);
+		        //gpu.setWindowResizeCallback(onWindowResized);
+		        //onWindowResized(gpu.windowWidth, gpu.windowHeight);
+		        gpu.setViewportChangeCallback(onViewportChanged);
+		        onViewportChanged(gpu.viewportX, gpu.viewportY, gpu.viewportWidth, gpu.viewportHeight);
 				gpu.setRenderFunction(render);
 			case Failure(e):
 				trace(e);
@@ -81,15 +85,31 @@ class KorriganTest{
 		
 	}
 
-	function onWindowResized(width : Float, height : Float){
+	// function onWindowResized(width : Float, height : Float){
+	// 	mat.ortho(0, logicalWidth, logicalHeight,0,-1,1);
+	// }
+
+	function onViewportChanged(x : Int, y : Int, width : Int, height : Int){
 		mat.ortho(0, width, height,0,-1,1);
+		//if Fill 
+		//todo centering
+		var widthRatio = width/logicalWidth;
+		var heightRatio = height/logicalHeight;
+		var scale : Float = 1;
+		if(widthRatio > heightRatio){
+			scale = heightRatio; 
+		}else{
+			scale = widthRatio; 
+		}
+		mat.scale(mat,scale, scale, 1);
+		//else
+		//mat.scale(mat,width/logicalWidth, height/logicalHeight, 1);
 	}
 
 	function render(now : Float) {
 
-
-		var width = gpu.windowWidth;
-		var height = gpu.windowHeight;
+		var width = logicalWidth;
+		var height = logicalHeight;
 
 		gpu.clearWith(0,0,0,1);
 
@@ -139,14 +159,16 @@ class KorriganTest{
 		program.set_normal(_normal);
 		
 
-		//split screen test
-		//var numSplit : Int = 2;
-		////to keep same size:
-		////mat.ortho(0, width/numSplit, height,0,-1,1);
-		//for (i in 0...numSplit){
-		//	gpu.setViewPort((gpu.windowWidth/numSplit) * i,0,gpu.windowWidth/numSplit, gpu.windowHeight);
-		//	program.draw(buffer);	
-		//}
+		// //split screen test
+		// var numSplit : Int = 2;
+		// //to keep same size:
+		// //mat.ortho(0, width/numSplit, height,0,-1,1);
+		// for (i in 0...numSplit){
+		// 	//this is like using Fill
+		// 	gpu.setViewPort((gpu.windowWidth/numSplit) * i,0,gpu.windowWidth/numSplit, gpu.windowHeight);
+		// 	program.set_view(mat);
+		// 	program.draw(buffer);	
+		// }
 
 		program.draw(buffer);	
 		
