@@ -1,3 +1,5 @@
+import boot.Runner;
+import boot.Runnable;
 import haxe.Json;
 import korrigan.TransformationContext;
 import loka.asset.Image;
@@ -20,15 +22,14 @@ import glee.GPU;
 import glee.GPUTexture;
 import tri.ColorProgram;
 
-class KorriganTest{
+class KorriganTest implements Runnable{
 
-	var logicalWidth = 600;
-	var logicalHeight = 400;
 	var gpu : GPU;
 	var loader : Loader;
 
 	var colorProgram : ColorProgram;
 	var colorBuffer  : GPUBuffer<ColorProgram>;
+	var secondColorBuffer  : GPUBuffer<ColorProgram>;
 
 	var program : NormalTexturedProgram;
 	var buffer  : GPUBuffer<NormalTexturedProgram>;
@@ -37,7 +38,24 @@ class KorriganTest{
 
 	var _diffuse : GPUTexture;
 	var _normal: GPUTexture;
-	var mat : Mat4;
+	var proj : Mat4;
+	var view: Mat4;
+	var viewproj : Mat4;
+
+
+	var visibleWidth : Float;
+	var visibleHeight : Float;
+
+	//model
+	var _runner : Runner;
+	var spaceshipAngle : Float;
+	var spaceshipX : Float;
+	var spaceshipY : Float;
+
+
+	var logicalWidth = 600;
+	var logicalHeight = 400;
+
 
 	static function main() : Void{
 		trace("korrigan test");
@@ -53,8 +71,13 @@ class KorriganTest{
 		colorProgram = ColorProgram.upload(gpu);
 		colorBuffer = new GPUBuffer<ColorProgram>(gpu, GL.DYNAMIC_DRAW);
 
+
+		secondColorBuffer = new GPUBuffer<ColorProgram>(gpu, GL.DYNAMIC_DRAW);
+
 		context = new TransformationContext();
-		mat = new Mat4();
+		proj = new Mat4();
+		view = new Mat4();
+		viewproj = new Mat4();
 		
 		Assets.load(["texture.json","sprites.json"],["colors.png","normals.png"]).handle(loadingAssets);
 	}
@@ -79,6 +102,9 @@ class KorriganTest{
 		        gpu.setViewportChangeCallback(onViewportChanged);
 		        onViewportChanged(gpu.viewportX, gpu.viewportY, gpu.viewportWidth, gpu.viewportHeight);
 				gpu.setRenderFunction(render);
+
+				_runner = new Runner(this);
+				_runner.start(30);
 			case Failure(e):
 				trace(e);
 		}
@@ -90,9 +116,8 @@ class KorriganTest{
 	// }
 
 	function onViewportChanged(x : Int, y : Int, width : Int, height : Int){
-		mat.ortho(0, width, height,0,-1,1);
+		proj.ortho(0, width, height,0,-1,1);
 		//if Fill 
-		//todo centering
 		var widthRatio = width/logicalWidth;
 		var heightRatio = height/logicalHeight;
 		var scale : Float = 1;
@@ -101,20 +126,39 @@ class KorriganTest{
 		}else{
 			scale = widthRatio; 
 		}
-		mat.scale(mat,scale, scale, 1);
+		proj.scale(proj,scale, scale, 1);
+		visibleWidth = width / scale;
+		visibleHeight = height / scale;
 		//else
-		//mat.scale(mat,width/logicalWidth, height/logicalHeight, 1);
+		// proj.scale(proj,width/logicalWidth, height/logicalHeight, 1);
+		// visibleWidth = logicalWidth;
+		// visibleHeight = logicalHeight;
+	}
+
+	public function start(now : Float){
+		spaceshipAngle = now;
+		spaceshipX = logicalWidth/2 + Math.cos(spaceshipAngle) * logicalWidth/3;
+		spaceshipY = logicalHeight/2  + Math.sin(spaceshipAngle) * logicalHeight/3;
+	}
+
+	public function update(now : Float, dt : Float){
+		spaceshipAngle = now;
+		spaceshipX = logicalWidth/2 + Math.cos(spaceshipAngle) * logicalWidth/3;
+		spaceshipY = logicalHeight/2  + Math.sin(spaceshipAngle) * logicalHeight/3;
 	}
 
 	function render(now : Float) {
+		//centering
+		view.identity();
+		view.translate(view, visibleWidth/2 -spaceshipX,visibleHeight/2 -spaceshipY, 0);
+		viewproj.multiply(proj, view);
 
-		var width = logicalWidth;
-		var height = logicalHeight;
+		//todo limit the side
 
 		gpu.clearWith(0,0,0,1);
 
 		var r = 0.5;
-		var g = 0;
+		var g = 0.0;
 		var b = 0.5;
 		var a = 1;
 		colorBuffer.rewind();
@@ -131,30 +175,53 @@ class KorriganTest{
 		colorBuffer.write_color(r,g,b,a);
 		colorBuffer.write_position(-1,-1,0);
 		colorBuffer.write_color(r,g,b,a);
+		colorProgram.set_viewproj(new Mat4());
 		colorProgram.draw(colorBuffer);
 
 		gpu.gl.enable(GL.BLEND);
 		gpu.gl.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
 
+		r = 1.0;
+		g = 0.2;
+		b = 0.1;
+		a= 1;
+		secondColorBuffer.rewind();
+		secondColorBuffer.write_position(100,100,0);
+		secondColorBuffer.write_color(r,g,b,a);
+		secondColorBuffer.write_position(100,200,0);
+		secondColorBuffer.write_color(r,g,b,a);
+		secondColorBuffer.write_position(200,200,0);
+		secondColorBuffer.write_color(r,g,b,a);
+
+		secondColorBuffer.write_position(200,200,0);
+		secondColorBuffer.write_color(r,g,b,a);
+		secondColorBuffer.write_position(200,100,0);
+		secondColorBuffer.write_color(r,g,b,a);
+		secondColorBuffer.write_position(100,100,0);
+		secondColorBuffer.write_color(r,g,b,a);
+		colorProgram.set_viewproj(viewproj);
+		colorProgram.draw(secondColorBuffer);
+
 		buffer.rewind();
 		context.save();
 
-		var angle = now;
-		context.translate(width/2 + Math.cos(angle) * width/3, height/2  + Math.sin(angle) * height/3);
-		context.rotateZ(angle);
-		context.scale( Math.cos(angle), Math.sin(angle));
+		context.translate(spaceshipX, spaceshipY);
+		//context.rotateZ(spaceshipAngle);
+		//context.scale( Math.cos(spaceshipAngle), Math.sin(spaceshipAngle));
 
 		spriteLibrary.draw(buffer,context,"SpaceShipEvilOne.blend", "idle",0, 0,0,0, 100, 100, true);
 		context.restore();
   		buffer.upload();
 
-		program.set_view(mat);
-		program.set_ambientColor(1,1,1,1);
-		program.set_lightPos(0, 0, 0.1);
+		program.set_viewproj(viewproj);
+		program.set_ambientColor(0.2,0.2,0.2,0.2);
+		var lightPosVec = new Vec3(150,150,0.075);
+		lightPosVec.transformMat4(lightPosVec, view);
+		program.set_lightPos(lightPosVec.x, lightPosVec.y, lightPosVec.z);
 		program.set_lightColor(1,1,1,3);
 		
-		program.set_resolution(width,height);
-		program.set_falloff(0,4,80); //TODO? would clear cache and set values to be uploaded only
+		program.set_resolution(gpu.viewportWidth, gpu.viewportHeight);
+		program.set_falloff(0.2,0.4,0.8); //TODO? would clear cache and set values to be uploaded only
 		program.set_tex(_diffuse);
 		program.set_normal(_normal);
 		

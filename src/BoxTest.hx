@@ -84,7 +84,7 @@ class BoxTest{
 		
 		program.set_tex(_texture);
 		var view = new Mat4();
-		program.set_view(view.translate(view,-0.5,0,0));
+		program.set_viewproj(view.translate(view,-0.5,0,0));
 		program.draw(buffer); //TODO should be able to specify the number of indices/vertices
 		//TODO? should be able to specify gpu state ?
 	}
