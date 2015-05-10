@@ -64,7 +64,7 @@ class KorriganTest implements Runnable{
 
 	public function new( ){
 		loader = new Loader();
-		gpu = GPU.init({viewportType : FillUpToRatios(1/4,4), viewportPosition: Center, maxHDPI:1});
+		gpu = GPU.init({viewportType : Fill, viewportPosition: Center, maxHDPI:1});
 		program = NormalTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<NormalTexturedProgram>(gpu, GL.DYNAMIC_DRAW); 
 
@@ -114,19 +114,19 @@ class KorriganTest implements Runnable{
 	// function onWindowResized(width : Float, height : Float){
 	// 	mat.ortho(0, logicalWidth, logicalHeight,0,-1,1);
 	// }
-
+	var scale : Float = 1;
 	function onViewportChanged(x : Int, y : Int, width : Int, height : Int){
 		proj.ortho(0, width, height,0,-1,1);
 		//if Fill 
 		var widthRatio = width/logicalWidth;
 		var heightRatio = height/logicalHeight;
-		var scale : Float = 1;
+		//var scale : Float = 1;
 		if(widthRatio > heightRatio){
 			scale = heightRatio; 
 		}else{
 			scale = widthRatio; 
 		}
-		proj.scale(proj,scale, scale, 1);
+		//proj.scale(proj,scale, scale, 1);
 		visibleWidth = width / scale;
 		visibleHeight = height / scale;
 		//else
@@ -150,10 +150,13 @@ class KorriganTest implements Runnable{
 	function render(now : Float) {
 		//centering
 		view.identity();
+		view.scale(view,scale,scale,1);
 		view.translate(view, visibleWidth/2 -spaceshipX,visibleHeight/2 -spaceshipY, 0);
 		viewproj.multiply(proj, view);
 
-		//todo limit the side
+		//TODO limit the side
+
+		//TODO support zooming
 
 		gpu.clearWith(0,0,0,1);
 
@@ -178,26 +181,28 @@ class KorriganTest implements Runnable{
 		colorProgram.set_viewproj(new Mat4());
 		colorProgram.draw(colorBuffer);
 
-		gpu.gl.enable(GL.BLEND);
-		gpu.gl.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+		gpu.enableBlending();
+		gpu.setBlendingFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
 
 		r = 1.0;
 		g = 0.2;
 		b = 0.1;
 		a= 1;
+		var posX = logicalWidth /2;
+		var posY = logicalHeight /2;
 		secondColorBuffer.rewind();
-		secondColorBuffer.write_position(100,100,0);
+		secondColorBuffer.write_position(posX-50,posY-50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		secondColorBuffer.write_position(100,200,0);
+		secondColorBuffer.write_position(posX-50,posY+50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		secondColorBuffer.write_position(200,200,0);
+		secondColorBuffer.write_position(posX+50,posY+50,0);
 		secondColorBuffer.write_color(r,g,b,a);
 
-		secondColorBuffer.write_position(200,200,0);
+		secondColorBuffer.write_position(posX+50,posY+50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		secondColorBuffer.write_position(200,100,0);
+		secondColorBuffer.write_position(posX+50,posY-50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		secondColorBuffer.write_position(100,100,0);
+		secondColorBuffer.write_position(posX-50,posY-50,0);
 		secondColorBuffer.write_color(r,g,b,a);
 		colorProgram.set_viewproj(viewproj);
 		colorProgram.draw(secondColorBuffer);
@@ -206,6 +211,7 @@ class KorriganTest implements Runnable{
 		context.save();
 
 		context.translate(spaceshipX, spaceshipY);
+		//TODO TOFIX (rotated normal map fails) : context.rotateZ(Math.PI);
 		//context.rotateZ(spaceshipAngle);
 		//context.scale( Math.cos(spaceshipAngle), Math.sin(spaceshipAngle));
 
@@ -215,12 +221,12 @@ class KorriganTest implements Runnable{
 
 		program.set_viewproj(viewproj);
 		program.set_ambientColor(0.2,0.2,0.2,0.2);
-		var lightPosVec = new Vec3(150,150,0.075);
+		var lightPosVec = new Vec3(posX,posY,0.075);
 		lightPosVec.transformMat4(lightPosVec, view);
-		program.set_lightPos(lightPosVec.x, lightPosVec.y, lightPosVec.z);
+		program.set_lightPos(lightPosVec.x + gpu.viewportX, lightPosVec.y + gpu.viewportY, lightPosVec.z);
 		program.set_lightColor(1,1,1,3);
 		
-		program.set_resolution(gpu.viewportWidth, gpu.viewportHeight);
+		program.set_resolution(gpu.windowWidth, gpu.windowHeight); //TODO use bufferWidth ...
 		program.set_falloff(0.2,0.4,0.8); //TODO? would clear cache and set values to be uploaded only
 		program.set_tex(_diffuse);
 		program.set_normal(_normal);
