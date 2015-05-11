@@ -42,20 +42,24 @@ class KorriganTest implements Runnable{
 	var view: Mat4;
 	var viewproj : Mat4;
 
-
-	var visibleWidth : Float;
-	var visibleHeight : Float;
-
 	//model
 	var _runner : Runner;
 	var spaceshipAngle : Float;
 	var spaceshipX : Float;
 	var spaceshipY : Float;
+	var lightBoxX : Float;
+	var lightBoxY : Float;
 
 
-	var logicalWidth = 600;
-	var logicalHeight = 400;
+	var focusWidth = 600;
+	var focusHeight = 400;
 
+	var worldWidth = 1000;
+	var worldHeight = 1000;
+
+
+	var visibleWidth : Float;
+	var visibleHeight : Float;
 
 	static function main() : Void{
 		trace("korrigan test");
@@ -64,7 +68,7 @@ class KorriganTest implements Runnable{
 
 	public function new( ){
 		loader = new Loader();
-		gpu = GPU.init({viewportType : Fill, viewportPosition: Center, maxHDPI:1});
+		gpu = GPU.init({viewportType : KeepRatioUsingBorder(focusWidth, focusHeight), viewportPosition: Right, maxHDPI:1});
 		program = NormalTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<NormalTexturedProgram>(gpu, GL.DYNAMIC_DRAW); 
 
@@ -111,15 +115,13 @@ class KorriganTest implements Runnable{
 		
 	}
 
-	// function onWindowResized(width : Float, height : Float){
-	// 	mat.ortho(0, logicalWidth, logicalHeight,0,-1,1);
-	// }
+
 	var scale : Float = 1;
 	function onViewportChanged(x : Int, y : Int, width : Int, height : Int){
 		proj.ortho(0, width, height,0,-1,1);
 		//if Fill 
-		var widthRatio = width/logicalWidth;
-		var heightRatio = height/logicalHeight;
+		var widthRatio = width/focusWidth;
+		var heightRatio = height/focusHeight;
 		//var scale : Float = 1;
 		if(widthRatio > heightRatio){
 			scale = heightRatio; 
@@ -136,15 +138,15 @@ class KorriganTest implements Runnable{
 	}
 
 	public function start(now : Float){
-		spaceshipAngle = now;
-		spaceshipX = logicalWidth/2 + Math.cos(spaceshipAngle) * logicalWidth/3;
-		spaceshipY = logicalHeight/2  + Math.sin(spaceshipAngle) * logicalHeight/3;
+		update(now,0);
 	}
 
 	public function update(now : Float, dt : Float){
 		spaceshipAngle = now;
-		spaceshipX = logicalWidth/2 + Math.cos(spaceshipAngle) * logicalWidth/3;
-		spaceshipY = logicalHeight/2  + Math.sin(spaceshipAngle) * logicalHeight/3;
+		spaceshipX = worldWidth/2 + Math.cos(spaceshipAngle) * worldWidth/3;
+		spaceshipY = worldHeight/2  + Math.sin(spaceshipAngle) * worldHeight/3;
+		lightBoxX = worldWidth/2;
+		lightBoxY = worldHeight/2;
 	}
 
 	function render(now : Float) {
@@ -188,21 +190,19 @@ class KorriganTest implements Runnable{
 		g = 0.2;
 		b = 0.1;
 		a= 1;
-		var posX = logicalWidth /2;
-		var posY = logicalHeight /2;
 		secondColorBuffer.rewind();
-		secondColorBuffer.write_position(posX-50,posY-50,0);
+		secondColorBuffer.write_position(lightBoxX-50,lightBoxY-50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		secondColorBuffer.write_position(posX-50,posY+50,0);
+		secondColorBuffer.write_position(lightBoxX-50,lightBoxY+50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		secondColorBuffer.write_position(posX+50,posY+50,0);
+		secondColorBuffer.write_position(lightBoxX+50,lightBoxY+50,0);
 		secondColorBuffer.write_color(r,g,b,a);
 
-		secondColorBuffer.write_position(posX+50,posY+50,0);
+		secondColorBuffer.write_position(lightBoxX+50,lightBoxY+50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		secondColorBuffer.write_position(posX+50,posY-50,0);
+		secondColorBuffer.write_position(lightBoxX+50,lightBoxY-50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		secondColorBuffer.write_position(posX-50,posY-50,0);
+		secondColorBuffer.write_position(lightBoxX-50,lightBoxY-50,0);
 		secondColorBuffer.write_color(r,g,b,a);
 		colorProgram.set_viewproj(viewproj);
 		colorProgram.draw(secondColorBuffer);
@@ -221,7 +221,7 @@ class KorriganTest implements Runnable{
 
 		program.set_viewproj(viewproj);
 		program.set_ambientColor(0.2,0.2,0.2,0.2);
-		var lightPosVec = new Vec3(posX,posY,0.075);
+		var lightPosVec = new Vec3(lightBoxX,lightBoxY,0.075);
 		lightPosVec.transformMat4(lightPosVec, view);
 		program.set_lightPos(lightPosVec.x + gpu.viewportX, lightPosVec.y + gpu.viewportY, lightPosVec.z);
 		program.set_lightColor(1,1,1,3);
