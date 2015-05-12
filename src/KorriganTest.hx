@@ -68,7 +68,7 @@ class KorriganTest implements Runnable{
 
 	public function new( ){
 		loader = new Loader();
-		gpu = GPU.init({viewportType : KeepRatioUsingBorder(focusWidth, focusHeight), viewportPosition: Right, maxHDPI:1});
+		gpu = GPU.init({viewportType : Fill /*KeepRatioUsingBorder(focusWidth, focusHeight)*/, viewportPosition: Center, maxHDPI:1});
 		program = NormalTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<NormalTexturedProgram>(gpu, GL.DYNAMIC_DRAW); 
 
@@ -128,6 +128,7 @@ class KorriganTest implements Runnable{
 		}else{
 			scale = widthRatio; 
 		}
+		//TODO support light when scale =1 (while the drawingbuffer has a different scale)
 		//proj.scale(proj,scale, scale, 1);
 		visibleWidth = width / scale;
 		visibleHeight = height / scale;
