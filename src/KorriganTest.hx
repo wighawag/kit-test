@@ -22,7 +22,12 @@ import glee.GPU;
 import glee.GPUTexture;
 import tri.ColorProgram;
 
+import korrigan.OrthoCamera;
+
 class KorriganTest implements Runnable{
+
+	inline static var FOCUS_WIDTH = 600;
+	inline static var FOCUS_HEIGHT = 400;
 
 	var gpu : GPU;
 	var loader : Loader;
@@ -38,28 +43,19 @@ class KorriganTest implements Runnable{
 
 	var _diffuse : GPUTexture;
 	var _normal: GPUTexture;
-	var proj : Mat4;
-	var view: Mat4;
-	var viewproj : Mat4;
+
+	var _camera : OrthoCamera;
 
 	//model
 	var _runner : Runner;
+	var worldWidth = 1000;
+	var worldHeight = 1000;
 	var spaceshipAngle : Float;
 	var spaceshipX : Float;
 	var spaceshipY : Float;
 	var lightBoxX : Float;
 	var lightBoxY : Float;
-
-
-	var focusWidth = 600;
-	var focusHeight = 400;
-
-	var worldWidth = 1000;
-	var worldHeight = 1000;
-
-
-	var visibleWidth : Float;
-	var visibleHeight : Float;
+	
 
 	static function main() : Void{
 		trace("korrigan test");
@@ -68,7 +64,9 @@ class KorriganTest implements Runnable{
 
 	public function new( ){
 		loader = new Loader();
-		gpu = GPU.init({viewportType : Fill /*KeepRatioUsingBorder(focusWidth, focusHeight)*/, viewportPosition: Center, maxHDPI:1});
+		gpu = GPU.init({viewportType : Fill /*KeepRatioUsingBorder(FOCUS_WIDTH, FOCUS_HEIGHT)*/, viewportPosition: Center, maxHDPI:1});
+		_camera = new OrthoCamera(gpu, FOCUS_WIDTH, FOCUS_HEIGHT, {scale:true});
+
 		program = NormalTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<NormalTexturedProgram>(gpu, GL.DYNAMIC_DRAW); 
 
@@ -79,9 +77,6 @@ class KorriganTest implements Runnable{
 		secondColorBuffer = new GPUBuffer<ColorProgram>(gpu, GL.DYNAMIC_DRAW);
 
 		context = new TransformationContext();
-		proj = new Mat4();
-		view = new Mat4();
-		viewproj = new Mat4();
 		
 		Assets.load(["texture.json","sprites.json"],["colors.png","normals.png"]).handle(loadingAssets);
 	}
@@ -101,10 +96,7 @@ class KorriganTest implements Runnable{
 				_diffuse = gpu.uploadTexture(assets.images.get("colors.png"));
 		        _normal = gpu.uploadTexture(assets.images.get("normals.png"));
 
-		        //gpu.setWindowResizeCallback(onWindowResized);
-		        //onWindowResized(gpu.windowWidth, gpu.windowHeight);
-		        gpu.setViewportChangeCallback(onViewportChanged);
-		        onViewportChanged(gpu.viewportX, gpu.viewportY, gpu.viewportWidth, gpu.viewportHeight);
+
 				gpu.setRenderFunction(render);
 
 				_runner = new Runner(this);
@@ -116,27 +108,6 @@ class KorriganTest implements Runnable{
 	}
 
 
-	var scale : Float = 1;
-	function onViewportChanged(x : Int, y : Int, width : Int, height : Int){
-		proj.ortho(0, width, height,0,-1,1);
-		//if Fill 
-		var widthRatio = width/focusWidth;
-		var heightRatio = height/focusHeight;
-		//var scale : Float = 1;
-		if(widthRatio > heightRatio){
-			scale = heightRatio; 
-		}else{
-			scale = widthRatio; 
-		}
-		//TODO support light when scale =1 (while the drawingbuffer has a different scale)
-		//proj.scale(proj,scale, scale, 1);
-		visibleWidth = width / scale;
-		visibleHeight = height / scale;
-		//else
-		// proj.scale(proj,width/logicalWidth, height/logicalHeight, 1);
-		// visibleWidth = logicalWidth;
-		// visibleHeight = logicalHeight;
-	}
 
 	public function start(now : Float){
 		update(now,0);
@@ -152,15 +123,8 @@ class KorriganTest implements Runnable{
 
 	function render(now : Float) {
 		//centering
-		view.identity();
-		view.scale(view,scale,scale,1);
-		view.translate(view, visibleWidth/2 -spaceshipX,visibleHeight/2 -spaceshipY, 0);
-		viewproj.multiply(proj, view);
-
-		//TODO limit the side
-
-		//TODO support zooming
-
+		_camera.centerOn(spaceshipX, spaceshipY);
+		
 		gpu.clearWith(0,0,0,1);
 
 		var r = 0.5;
@@ -205,7 +169,7 @@ class KorriganTest implements Runnable{
 		secondColorBuffer.write_color(r,g,b,a);
 		secondColorBuffer.write_position(lightBoxX-50,lightBoxY-50,0);
 		secondColorBuffer.write_color(r,g,b,a);
-		colorProgram.set_viewproj(viewproj);
+		colorProgram.set_viewproj(_camera.viewproj);
 		colorProgram.draw(secondColorBuffer);
 
 		buffer.rewind();
@@ -220,11 +184,11 @@ class KorriganTest implements Runnable{
 		context.restore();
   		buffer.upload();
 
-		program.set_viewproj(viewproj);
+		program.set_viewproj(_camera.viewproj);
 		program.set_ambientColor(0.2,0.2,0.2,0.2);
 		var lightPosVec = new Vec3(lightBoxX,lightBoxY,0.075);
-		lightPosVec.transformMat4(lightPosVec, view);
-		program.set_lightPos(lightPosVec.x + gpu.viewportX, lightPosVec.y + gpu.viewportY, lightPosVec.z);
+		lightPosVec = _camera.toBufferCoordinates(lightPosVec, lightPosVec);
+		program.set_lightPos(lightPosVec.x, lightPosVec.y, lightPosVec.z);
 		program.set_lightColor(1,1,1,3);
 		
 		program.set_resolution(gpu.windowWidth, gpu.windowHeight); //TODO use bufferWidth ...
