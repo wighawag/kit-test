@@ -20,3 +20,11 @@
 -js bin/korrigantest/Main.js
 -debug
 -D source-map-content
+
+--next
+-main VideoTest
+-cp src
+-lib kit
+-js bin/videotest/Main.js
+-debug
+-D source-map-content
