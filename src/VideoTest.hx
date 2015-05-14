@@ -20,9 +20,11 @@ import loka.App;
 import glee.GPU;
 import glee.GPUTexture;
 
+import korrigan.OrthoCamera;
+
 class VideoTest{
 
-	inline static var FOCUS_WIDTH = 600;
+	inline static var FOCUS_WIDTH = 1200;
 	inline static var FOCUS_HEIGHT = 400;
 
 	var gpu : GPU;
@@ -30,6 +32,8 @@ class VideoTest{
 
 	var program : SimpleTexturedProgram;
 	var buffer  : GPUBuffer<SimpleTexturedProgram>;
+
+	var _camera : OrthoCamera;
 
 	var _texture : GPUTexture;
 	var _video : Video;
@@ -41,8 +45,8 @@ class VideoTest{
 
 	public function new( ){
 		loader = new Loader();
-		gpu = GPU.init({viewportType : Fill /*KeepRatioUsingBorder(FOCUS_WIDTH, FOCUS_HEIGHT)*/, viewportPosition: Center, maxHDPI:1});
-		
+		gpu = GPU.init({viewportType : KeepRatioUsingBorder(FOCUS_WIDTH, FOCUS_HEIGHT), viewportPosition: Center, maxHDPI:1});
+		_camera = new OrthoCamera(gpu,FOCUS_WIDTH,FOCUS_HEIGHT);
 		program = SimpleTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<SimpleTexturedProgram>(gpu, GL.DYNAMIC_DRAW); 
 
@@ -52,17 +56,30 @@ class VideoTest{
 	function initialised() : Void{
 		_texture = GPUTexture.create(gpu);
 		_video = cast js.Browser.document.createElement('video');
+
 		if (_video.canPlayType('video/mp4').length > 0) {
  			_video.src = 'loop1.mp4';
 			untyped _video.autoPlay = true;
 			_video.loop = true;
 			untyped _video.oncanplay = ready;
+			untyped _video.onloadedmetadata = function () {
+		        trace("loadedmetadat");
+		    };
 			_video.play();
 		}else{
 			trace("cannot play the video (mp4 not supported)");
 		}
+
+
+
+		js.Browser.document.addEventListener('mousemove', function(e){ 
+		    mouseX = e.clientX == null ? e.clientX : e.pageX; 
+		    mouseY = e.clientY == null ? e.clientX :  e.pageY;
+		}, false);
 		
 	}
+	var mouseX : Int;
+	var mouseY : Int;
 
 	function ready() : Void{
 		gpu.setRenderFunction(render);   
@@ -71,7 +88,22 @@ class VideoTest{
 
 	function render(now : Float) {
 		//centering
-		
+		var centerX = _video.videoWidth / 2 + (mouseX - gpu.windowWidth/2) * ( _video.videoWidth / gpu.windowWidth);
+		var centerY = _video.videoHeight / 2 + (mouseY - gpu.windowHeight/2) * (_video.videoHeight / gpu.windowHeight);
+		if(centerX < - FOCUS_WIDTH){
+			centerX += _video.videoWidth;
+		}
+		if(centerX > _video.videoWidth - FOCUS_WIDTH){
+			centerX -= _video.videoWidth;
+		}
+		if(centerY > (_video.videoHeight - FOCUS_HEIGHT/2)){
+			centerY = _video.videoHeight - FOCUS_HEIGHT/2;
+		}
+		if(centerY < FOCUS_HEIGHT/2){
+			centerY = FOCUS_HEIGHT/2;
+		}
+		_camera.centerOn(centerX,centerY);
+
 		gpu.clearWith(0,0,0,1);
 		try
 		{
@@ -85,22 +117,38 @@ class VideoTest{
 		buffer.rewind();
 		
 
-		buffer.write_position(-1,-1,0);
+		buffer.write_position(-_video.videoWidth,_video.videoHeight,0);
 		buffer.write_texCoords(0, 1);
-		buffer.write_position(-1,1,0);
+		buffer.write_position(-_video.videoWidth,0,0);
 		buffer.write_texCoords(0,0);
-		buffer.write_position(1,1,0);
+		buffer.write_position(0,0,0);
 		buffer.write_texCoords(1,0);
 
-		buffer.write_position(1,1,0);
+		buffer.write_position(0,0,0);
 		buffer.write_texCoords(1,0);
-		buffer.write_position(1,-1,0);
+		buffer.write_position(0,_video.videoHeight,0);
 		buffer.write_texCoords(1,1);
-		buffer.write_position(-1,-1,0);
+		buffer.write_position(-_video.videoWidth,_video.videoHeight,0);
+		buffer.write_texCoords(0,1);
+
+
+		buffer.write_position(0,_video.videoHeight,0);
+		buffer.write_texCoords(0, 1);
+		buffer.write_position(0,0,0);
+		buffer.write_texCoords(0,0);
+		buffer.write_position(_video.videoWidth,0,0);
+		buffer.write_texCoords(1,0);
+
+		buffer.write_position(_video.videoWidth,0,0);
+		buffer.write_texCoords(1,0);
+		buffer.write_position(_video.videoWidth,_video.videoHeight,0);
+		buffer.write_texCoords(1,1);
+		buffer.write_position(0,_video.videoHeight,0);
 		buffer.write_texCoords(0,1);
 		
   		buffer.upload();
 
+  		program.set_viewproj(_camera.viewproj);
 		program.set_tex(_texture);
 		program.draw(buffer);	
 		
