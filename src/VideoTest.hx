@@ -7,6 +7,8 @@ import boot.Assets;
 import glee.GPUBuffer;
 import glee.GPUTexture;
 
+import tri.PerspectiveCamera;
+using tri.Quad;
 import tri.SimpleTexturedProgram;
 
 using glmat.Mat4;
@@ -33,7 +35,8 @@ class VideoTest{
 	var program : SimpleTexturedProgram;
 	var buffer  : GPUBuffer<SimpleTexturedProgram>;
 
-	var _camera : OrthoCamera;
+	var _perspectiveCamera : PerspectiveCamera;
+	var _orthoCamera : OrthoCamera;
 
 	var _texture : GPUTexture;
 	var _video : Video;
@@ -46,7 +49,8 @@ class VideoTest{
 	public function new( ){
 		loader = new Loader();
 		gpu = GPU.init({viewportType : KeepRatioUsingBorder(FOCUS_WIDTH, FOCUS_HEIGHT), viewportPosition: Center, maxHDPI:1});
-		_camera = new OrthoCamera(gpu,FOCUS_WIDTH,FOCUS_HEIGHT);
+		_perspectiveCamera = new PerspectiveCamera(gpu);
+		_orthoCamera = new OrthoCamera(gpu, FOCUS_WIDTH, FOCUS_HEIGHT);
 		program = SimpleTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<SimpleTexturedProgram>(gpu, GL.DYNAMIC_DRAW); 
 
@@ -90,6 +94,10 @@ class VideoTest{
 		//centering
 		var centerX = _video.videoWidth / 2 + (mouseX - gpu.windowWidth/2) * ( _video.videoWidth / gpu.windowWidth);
 		var centerY = _video.videoHeight / 2 + (mouseY - gpu.windowHeight/2) * (_video.videoHeight / gpu.windowHeight);
+		
+		_perspectiveCamera.setCenterPosition(centerX,centerY,0);
+		_perspectiveCamera.setEyePosition(0,0,-1);
+
 		if(centerX < - FOCUS_WIDTH){
 			centerX += _video.videoWidth;
 		}
@@ -102,7 +110,7 @@ class VideoTest{
 		if(centerY < FOCUS_HEIGHT/2){
 			centerY = FOCUS_HEIGHT/2;
 		}
-		_camera.centerOn(centerX,centerY);
+		_orthoCamera.centerOn(centerX, centerY);
 
 		gpu.clearWith(0,0,0,1);
 		try
@@ -115,40 +123,10 @@ class VideoTest{
 		}
 
 		buffer.rewind();
-		
-
-		buffer.write_position(-_video.videoWidth,_video.videoHeight,0);
-		buffer.write_texCoords(0, 1);
-		buffer.write_position(-_video.videoWidth,0,0);
-		buffer.write_texCoords(0,0);
-		buffer.write_position(0,0,0);
-		buffer.write_texCoords(1,0);
-
-		buffer.write_position(0,0,0);
-		buffer.write_texCoords(1,0);
-		buffer.write_position(0,_video.videoHeight,0);
-		buffer.write_texCoords(1,1);
-		buffer.write_position(-_video.videoWidth,_video.videoHeight,0);
-		buffer.write_texCoords(0,1);
-
-
-		buffer.write_position(0,_video.videoHeight,0);
-		buffer.write_texCoords(0, 1);
-		buffer.write_position(0,0,0);
-		buffer.write_texCoords(0,0);
-		buffer.write_position(_video.videoWidth,0,0);
-		buffer.write_texCoords(1,0);
-
-		buffer.write_position(_video.videoWidth,0,0);
-		buffer.write_texCoords(1,0);
-		buffer.write_position(_video.videoWidth,_video.videoHeight,0);
-		buffer.write_texCoords(1,1);
-		buffer.write_position(0,_video.videoHeight,0);
-		buffer.write_texCoords(0,1);
-		
+		buffer.writeTexturedQuad(_video.videoWidth, _video.videoHeight);
   		buffer.upload();
 
-  		program.set_viewproj(_camera.viewproj);
+  		program.set_viewproj(_orthoCamera.viewproj);
 		program.set_tex(_texture);
 		program.draw(buffer);	
 		
