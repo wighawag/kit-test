@@ -1,8 +1,9 @@
 import boot.Runner;
 import boot.Runnable;
+import boot.VideoLoader;
+import boot.VideoLoader.VideoOutcome;
 import haxe.Json;
 import loka.asset.Video;
-import loka.asset.Loader;
 import boot.Assets;
 import glee.GPUBuffer;
 import glee.GPUTexture;
@@ -30,7 +31,8 @@ class VideoTest{
 	inline static var FOCUS_HEIGHT = 400;
 
 	var gpu : GPU;
-	var loader : Loader;
+	var mouse : jsloka.input.Mouse;
+	var keyboard : jsloka.input.Keyboard;
 
 	var program : SimpleTexturedProgram;
 	var buffer  : GPUBuffer<SimpleTexturedProgram>;
@@ -47,8 +49,10 @@ class VideoTest{
 	}
 
 	public function new( ){
-		loader = new Loader();
 		gpu = GPU.init({viewportType : KeepRatioUsingBorder(FOCUS_WIDTH, FOCUS_HEIGHT), viewportPosition: Center, maxHDPI:1});
+		mouse = App.initMouse();
+		keyboard = App.initKeyboard();
+		keyboard.isDown(loka.input.Keyboard.B);
 		_perspectiveCamera = new PerspectiveCamera(gpu);
 		_orthoCamera = new OrthoCamera(gpu, FOCUS_WIDTH, FOCUS_HEIGHT);
 		program = SimpleTexturedProgram.upload(gpu);		
@@ -59,41 +63,28 @@ class VideoTest{
 
 	function initialised() : Void{
 		_texture = GPUTexture.create(gpu);
-		_video = cast js.Browser.document.createElement('video');
-
-		if (_video.canPlayType('video/mp4').length > 0) {
- 			_video.src = 'loop1.mp4';
-			untyped _video.autoPlay = true;
-			_video.loop = true;
-			untyped _video.oncanplay = ready;
-			untyped _video.onloadedmetadata = function () {
-		        trace("loadedmetadat");
-		    };
-			_video.play();
-		}else{
-			trace("cannot play the video (mp4 not supported)");
-		}
-
-
-
-		js.Browser.document.addEventListener('mousemove', function(e){ 
-		    mouseX = e.clientX == null ? e.clientX : e.pageX; 
-		    mouseY = e.clientY == null ? e.clientX :  e.pageY;
-		}, false);
+		var videoLoader = new VideoLoader();
+		videoLoader.load("loop1.mp4").handle(videoLoaded);
 		
 	}
-	var mouseX : Int;
-	var mouseY : Int;
 
-	function ready() : Void{
-		gpu.setRenderFunction(render);   
+
+	function videoLoaded(outcome : VideoOutcome) : Void{
+		switch(outcome){
+			case Success(video):
+				_video = video;
+				_video.loop = true;
+				_video.play();
+				gpu.setRenderFunction(render);   
+			case Failure(error): trace(error);
+		}
 	}
 
 
 	function render(now : Float) {
 		//centering
-		var centerX = _video.videoWidth / 2 + (mouseX - gpu.windowWidth/2) * ( _video.videoWidth / gpu.windowWidth);
-		var centerY = _video.videoHeight / 2 + (mouseY - gpu.windowHeight/2) * (_video.videoHeight / gpu.windowHeight);
+		var centerX = _video.videoWidth / 2 + (mouse.x - gpu.windowWidth/2) * ( _video.videoWidth / gpu.windowWidth);
+		var centerY = _video.videoHeight / 2 + (mouse.y - gpu.windowHeight/2) * (_video.videoHeight / gpu.windowHeight);
 		
 		_perspectiveCamera.setCenterPosition(centerX,centerY,0);
 		_perspectiveCamera.setEyePosition(0,0,-1);
