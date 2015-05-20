@@ -2,6 +2,7 @@ import boot.Runner;
 import boot.Runnable;
 import boot.VideoLoader;
 import boot.VideoLoader.VideoOutcome;
+import control.Input;
 import haxe.Json;
 import loka.asset.Video;
 import boot.Assets;
@@ -31,8 +32,8 @@ class VideoTest{
 	inline static var FOCUS_HEIGHT = 400;
 
 	var gpu : GPU;
-	var mouse : jsloka.input.Mouse;
-	var keyboard : jsloka.input.Keyboard;
+	var mouse : control.Mouse;
+	var keyboard : control.Keyboard;
 
 	var program : SimpleTexturedProgram;
 	var buffer  : GPUBuffer<SimpleTexturedProgram>;
@@ -50,9 +51,9 @@ class VideoTest{
 
 	public function new( ){
 		gpu = GPU.init({viewportType : KeepRatioUsingBorder(FOCUS_WIDTH, FOCUS_HEIGHT), viewportPosition: Center, maxHDPI:1});
-		mouse = App.initMouse();
-		keyboard = App.initKeyboard();
-		keyboard.isDown(loka.input.Keyboard.B);
+		mouse = Input.initMouse();
+		keyboard = Input.initKeyboard();
+		keyboard.isDown(loka.input.Key.B);
 		_perspectiveCamera = new PerspectiveCamera(gpu);
 		_orthoCamera = new OrthoCamera(gpu, FOCUS_WIDTH, FOCUS_HEIGHT);
 		program = SimpleTexturedProgram.upload(gpu);		
