@@ -4,6 +4,7 @@
 -js bin/test3d/Main.js
 -debug
 -D source-map-content
+-dce full
 
 --next
 -main BoxTest
@@ -12,6 +13,7 @@
 -js bin/boxtest/Main.js
 -debug
 -D source-map-content
+-dce full
 
 --next
 -main KorriganTest
@@ -20,6 +22,7 @@
 -js bin/korrigantest/Main.js
 -debug
 -D source-map-content
+-dce full
 
 --next
 -main VideoTest
@@ -28,3 +31,4 @@
 -js bin/videotest/Main.js
 -debug
 -D source-map-content
+-dce full

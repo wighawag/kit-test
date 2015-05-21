@@ -2,6 +2,7 @@ import loka.asset.Image;
 import loka.asset.Loader;
 import boot.Assets;
 import glee.GPUBuffer;
+import glee.GPUIndexedBuffer;
 import glee.GPUTexture;
 import haxe.Timer;
 
@@ -25,13 +26,13 @@ class Test3D{
 	var loader : Loader;
 
 	var program : SkyBoxProgram;
-	var buffer  : GPUBuffer<{position:Vec3}>;
+	var buffer  : GPUIndexedBuffer<{position:Vec3}>;
 
 	var _texture : GPUCubeTexture;
 	
 	var _obj_texture : GPUTexture;
 	var _obj_program : SimpleProgram;
-	var _obj_buffer : GPUBuffer<{position:Vec3}>;
+	var _obj_buffer : GPUIndexedBuffer<{position:Vec3}>;
 	var _skyBox_view : Mat4;
 	var _camera : PerspectiveCamera;
 
@@ -48,14 +49,14 @@ class Test3D{
 		loader = new Loader();
 		gpu = GPU.init();
 		program = SkyBoxProgram.upload(gpu);		
-		buffer = new GPUBuffer<{position:Vec3}>(gpu, GL.STATIC_DRAW); 
+		buffer = new GPUIndexedBuffer<{position:Vec3}>(gpu, GL.STATIC_DRAW); 
 		buffer.rewind();
 		var cube = new Cube(100,100,100);
 		cube.write(buffer);
 		buffer.upload();
 
 		_obj_program = SimpleProgram.upload(gpu);		
-		_obj_buffer = new GPUBuffer<{position:Vec3}>(gpu, GL.DYNAMIC_DRAW); 
+		_obj_buffer = new GPUIndexedBuffer<{position:Vec3}>(gpu, GL.DYNAMIC_DRAW); 
 
 		_skyBox_view = new Mat4();
 		
