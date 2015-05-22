@@ -1,1 +1,1 @@
-{"ball":{"idle":[{"textureCutOut":"ball"}]}}
+{"ball":{"idle":{"frames":[{"textureCutOut":"ball"}], "defaultMsDuration":30}}}
