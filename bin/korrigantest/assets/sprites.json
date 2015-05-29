@@ -1,0 +1,4 @@
+{
+	"textureAtlas" : "texture.json",
+	"sprites":{"SpaceShipEvilOne.blend":{"idle":{"frames":[{"textureCutOut":"SpaceShipEvilOne.blend"}], "defaultMsDuration":30}}}
+}

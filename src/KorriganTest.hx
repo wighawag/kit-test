@@ -88,7 +88,7 @@ class KorriganTest implements Runnable{
         switch (outcome) {
             case Success(assets):
                 sprites = assets.createSprites(Assets.SPRITES__JSON);
-                _diffuse = gpu.uploadTexture(assets.get(Assets.COLORS__PNG)); //TODO use sprites.textureAtlas
+                _diffuse = gpu.uploadTexture(assets.get(Assets.COLORS__PNG)); //TODO use sprites.textureAtlas.texture
                 _normal = gpu.uploadTexture(assets.get(Assets.NORMALS__PNG));
 
 

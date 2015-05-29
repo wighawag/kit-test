@@ -1,4 +1,5 @@
-bin/
+**/Main.js
+**/Main.js.map
 dump/
 node_modules/
 *.sublime-project
