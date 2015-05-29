@@ -36,7 +36,7 @@ class BoxTest{
 		program = SimpleTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<SimpleTexturedProgram>(gpu, GL.DYNAMIC_DRAW);
 
-		loader.loadImage(Assets.test__png,assetLoaded , errorLoading);
+		loader.loadImage(Assets.TEST__PNG,assetLoaded , errorLoading);
 	}
 
 	function errorLoading(msg : String) : Void{

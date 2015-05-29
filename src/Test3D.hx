@@ -79,12 +79,12 @@ class Test3D{
 		switch (outcome) {
 			case Success(assets):
 				_texture = gpu.uploadCubeTexture(
-				assets.get(Assets.skybox_negx__jpg),
-				assets.get(Assets.skybox_negy__jpg),
-				assets.get(Assets.skybox_negz__jpg),
-				assets.get(Assets.skybox_posx__jpg),
-				assets.get(Assets.skybox_posy__jpg),
-				assets.get(Assets.skybox_posz__jpg)
+				assets.get(Assets.SKYBOX_NEGX__JPG),
+				assets.get(Assets.SKYBOX_NEGY__JPG),
+				assets.get(Assets.SKYBOX_NEGZ__JPG),
+				assets.get(Assets.SKYBOX_POSX__JPG),
+				assets.get(Assets.SKYBOX_POSY__JPG),
+				assets.get(Assets.SKYBOX_POSZ__JPG)
 					);
 				gpu.setRenderFunction(render);
 			case Failure(e):
