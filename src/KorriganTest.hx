@@ -2,8 +2,7 @@ import boot.Runner;
 import boot.Runnable;
 import haxe.Json;
 import korrigan.TransformationContext;
-import loka.asset.Image;
-import loka.asset.Loader;
+import boot.GenericAssetLoader;
 import boot.Assets;
 import glee.GPUBuffer;
 import glee.GPUTexture;
@@ -30,7 +29,6 @@ class KorriganTest implements Runnable{
 	inline static var FOCUS_HEIGHT = 400;
 
 	var gpu : GPU;
-	var loader : Loader;
 
 	var colorProgram : ColorProgram;
 	var colorBuffer  : GPUBuffer<ColorProgram>;
@@ -63,7 +61,6 @@ class KorriganTest implements Runnable{
 	}
 
 	public function new( ){
-		loader = new Loader();
 		gpu = GPU.init({viewportType : Fill /*KeepRatioUsingBorder(FOCUS_WIDTH, FOCUS_HEIGHT)*/, viewportPosition: Center, maxHDPI:1});
 		_camera = new OrthoCamera(gpu, FOCUS_WIDTH, FOCUS_HEIGHT, {scale:true});
 
@@ -78,7 +75,8 @@ class KorriganTest implements Runnable{
 
 		context = new TransformationContext();
 		
-		Assets.load(["texture.json","sprites.json"],["colors.png","normals.png"]).handle(loadingAssets);
+		var loader = GenericAssetLoader.init();
+		loader.load(Assets.ALL).handle(loadingAssets);
 	}
 
 	function errorLoading(msg : String) : Void{
@@ -89,12 +87,12 @@ class KorriganTest implements Runnable{
 		trace(outcome);
 		switch (outcome) {
 			case Success(assets):
-				var textureAtlas = Json.parse(assets.texts.get("texture.json"));
-		        var json : SpriteDataSet = Json.parse(assets.texts.get("sprites.json"));
+				var textureAtlas = Json.parse(assets.get(Assets.texture__json));
+		        var json : SpriteDataSet = Json.parse(assets.get(Assets.sprites__json));
 		        spriteLibrary = new SpriteLibrary();
 		        spriteLibrary.loadSprites(json,textureAtlas);  
-				_diffuse = gpu.uploadTexture(assets.images.get("colors.png"));
-		        _normal = gpu.uploadTexture(assets.images.get("normals.png"));
+				_diffuse = gpu.uploadTexture(assets.get(Assets.colors__png));
+		        _normal = gpu.uploadTexture(assets.get(Assets.normals__png));
 
 
 				gpu.setRenderFunction(render);

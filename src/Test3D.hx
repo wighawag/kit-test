@@ -1,6 +1,7 @@
+import boot.GenericAssetLoader;
+import boot.Assets;
 import loka.asset.Image;
 import loka.asset.Loader;
-import boot.Assets;
 import glee.GPUBuffer;
 import glee.GPUIndexedBuffer;
 import glee.GPUTexture;
@@ -65,7 +66,8 @@ class Test3D{
 		_camera = new PerspectiveCamera(gpu);
 
 		_cube = new Cube(10,30,10);
-		Assets.load([],["skybox/negx.jpg","skybox/negy.jpg","skybox/negz.jpg","skybox/posx.jpg","skybox/posy.jpg","skybox/posz.jpg"]).handle(loadingAssets);
+		var loader = GenericAssetLoader.init();
+		loader.load(Assets.ALL).handle(loadingAssets);
 	}
 
 	function errorLoading(msg : String) : Void{
@@ -77,12 +79,12 @@ class Test3D{
 		switch (outcome) {
 			case Success(assets):
 				_texture = gpu.uploadCubeTexture(
-				assets.images.get("skybox/negx.jpg"),
-				assets.images.get("skybox/negy.jpg"),
-				assets.images.get("skybox/negz.jpg"),
-				assets.images.get("skybox/posx.jpg"),
-				assets.images.get("skybox/posy.jpg"),
-				assets.images.get("skybox/posz.jpg")
+				assets.get(Assets.skybox_negx__jpg),
+				assets.get(Assets.skybox_negy__jpg),
+				assets.get(Assets.skybox_negz__jpg),
+				assets.get(Assets.skybox_posx__jpg),
+				assets.get(Assets.skybox_posy__jpg),
+				assets.get(Assets.skybox_posz__jpg)
 					);
 				gpu.setRenderFunction(render);
 			case Failure(e):

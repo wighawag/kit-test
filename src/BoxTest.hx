@@ -7,6 +7,7 @@ import loka.asset.Loader;
 import glee.GPUBuffer;
 import haxe.Timer;
 import loka.App;
+import boot.Assets;
 
 import korrigan.SimpleTexturedProgram;
 
@@ -35,7 +36,7 @@ class BoxTest{
 		program = SimpleTexturedProgram.upload(gpu);		
 		buffer = new GPUBuffer<SimpleTexturedProgram>(gpu, GL.DYNAMIC_DRAW);
 
-		loader.loadImage("test.png",assetLoaded , errorLoading);
+		loader.loadImage(Assets.test__png,assetLoaded , errorLoading);
 	}
 
 	function errorLoading(msg : String) : Void{

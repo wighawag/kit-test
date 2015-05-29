@@ -65,7 +65,7 @@ class VideoTest{
 	function initialised() : Void{
 		_texture = GPUTexture.create(gpu);
 		var videoLoader = new VideoLoader();
-		videoLoader.load("loop1.mp4").handle(videoLoaded);
+		videoLoader.load(Assets.loop1__mp4).handle(videoLoaded);
 		
 	}
 
